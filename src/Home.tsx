@@ -1,4 +1,9 @@
 import { useState } from 'react';
+import OpenAI from 'openai';
+const client = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true
+});
 
 const OutreachForm = () => {
   const [formData, setFormData] = useState({
@@ -15,7 +20,9 @@ const OutreachForm = () => {
     intent: ''
   });
 
-  const handleInputChange = (e) => {
+  const [emailGenerated, setEmailGenerated]: any = useState('Email drafting box');
+
+  const handleInputChange = (e: any) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -23,7 +30,8 @@ const OutreachForm = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
+    console.log("called");
     e.preventDefault();
 
     const prompt = `Generate a ${formData.tone} ${formData.length} outreach email in ${formData.language} with the following details:
@@ -38,15 +46,25 @@ const OutreachForm = () => {
     
     Please create an appropriate email that matches the specified tone and length.`;
 
+    const response = await client.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        { role: "system", content: "You are an AI email generator." },
+        { role: "user", content: prompt },
+      ]
+    });
+
+    setEmailGenerated(response.choices[0].message.content);
 
 
     console.log('OpenAI Prompt:', prompt);
     console.log('Form Data:', formData);
+    console.log(response.choices[0].message.content)
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 flex justify-between flex-row gap-3">
+      <div className="max-w-md">
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-8">
           {/* Header */}
           <div className="mb-8">
@@ -262,6 +280,11 @@ const OutreachForm = () => {
             </button>
           </form>
         </div>
+      </div>
+      {/* Email Draft */}
+      <div className='w-full border rounded-lg'>
+        <p>Email Draft</p>
+        <p>{emailGenerated}</p>
       </div>
     </div>
   );
